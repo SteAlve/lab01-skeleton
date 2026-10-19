@@ -10,9 +10,710 @@
       "url": "http://localhost:3001/"
     }
   ],
-  "paths": {},
+  "paths": {
+    "/api": {
+      "get": {
+        "tags": ["Api"],
+        "summary": "Retrieve the Film Manager",
+        "description": "The Film Manager resource, representing the entry point of the REST interface, is retrieved. It contains the links to the main resources. This operation does not require authentication.",
+        "operationId": "getFilmManager",
+        "responses": {
+          "200": {
+            "description": "The Film Manager entry point",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FilmManager" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/authenticator": {
+      "post": {
+        "tags": ["ApiUsersAuthenticator"],
+        "summary": "Log a user in",
+        "description": "The user sends email and password to the authenticator. If the credentials are correct, an authenticated session is created and the session cookie is returned. If the request comes from an already authenticated user, the previous user is first logged out. This operation does not require authentication.",
+        "operationId": "authenticateUser",
+        "requestBody": {
+          "description": "The credentials of the user who wants to log in",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Credentials" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authentication successful. The user data is returned and the session cookie is set.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "The session cookie (connect.sid)",
+                "schema": { "type": "string" }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/User" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "delete": {
+        "tags": ["ApiUsersAuthenticator"],
+        "summary": "Log the current user out",
+        "description": "The session of the current user is invalidated and the authentication cookie is removed.",
+        "operationId": "logoutUser",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "204": { "description": "Logout successful" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": ["ApiUsers"],
+        "summary": "Retrieve the users",
+        "description": "The available information (passwords excluded) about all the users is retrieved. This operation is available only to authenticated users.",
+        "operationId": "getUsers",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "The list of the users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/User" }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/users/{userId}": {
+      "parameters": [{ "$ref": "#/components/parameters/userId" }],
+      "get": {
+        "tags": ["ApiUsersUserId"],
+        "summary": "Retrieve a user",
+        "description": "The available information (password excluded) about the user with ID userId is retrieved. This operation requires authentication.",
+        "operationId": "getUserById",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "The user",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/User" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/films": {
+      "post": {
+        "tags": ["ApiFilms"],
+        "summary": "Create a new film",
+        "description": "A new film is created by the authenticated user, who becomes the owner. The ID is assigned by the service. The properties watchDate, rating and favorite are allowed only if private is true.",
+        "operationId": "createFilm",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "description": "The film to be created (without id and owner)",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FilmInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The film has been created",
+            "headers": {
+              "Location": {
+                "description": "The URI of the created film",
+                "schema": { "type": "string" }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Film" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/films/public": {
+      "get": {
+        "tags": ["ApiFilmsPublic"],
+        "summary": "Retrieve the public films",
+        "description": "The public films (i.e., the films visible to all the users) are retrieved. A pagination mechanism is used to limit the size of messages. This operation does not require authentication.",
+        "operationId": "getPublicFilms",
+        "parameters": [{ "$ref": "#/components/parameters/pageNo" }],
+        "responses": {
+          "200": {
+            "description": "A page of public films",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Films" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/films/public/invited": {
+      "get": {
+        "tags": ["ApiFilmsPublicInvited"],
+        "summary": "Retrieve the public films the user has been invited to review",
+        "description": "The public films that the logged-in user has been invited to review are retrieved. A pagination mechanism is used to limit the size of messages.",
+        "operationId": "getInvitedFilms",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/pageNo" }],
+        "responses": {
+          "200": {
+            "description": "A page of public films",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Films" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/films/public/assignments": {
+      "post": {
+        "tags": ["ApiFilmsPublicAssignments"],
+        "summary": "Assign the public films to the users for review",
+        "description": "Review invitations are automatically issued for all the public films that have no invitation yet, distributing them evenly among the users, so that each user receives approximately the same number of invitations. The design of this operation is mandatory, its implementation is not required (the server may answer 501).",
+        "operationId": "assignReviewers",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "201": {
+            "description": "The review invitations that have been created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Review" }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "501": { "$ref": "#/components/responses/NotImplemented" }
+        }
+      }
+    },
+    "/api/films/public/{filmId}": {
+      "parameters": [{ "$ref": "#/components/parameters/filmId" }],
+      "get": {
+        "tags": ["ApiFilmsPublicFilmId"],
+        "summary": "Retrieve a public film",
+        "description": "The public film with ID filmId is retrieved. If the film does not exist or is not public, 404 is returned. This operation does not require authentication.",
+        "operationId": "getSinglePublicFilm",
+        "responses": {
+          "200": {
+            "description": "The public film",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Film" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["ApiFilmsPublicFilmId"],
+        "summary": "Update a public film",
+        "description": "The public film with ID filmId is updated. This operation does not allow changing its visibility (a body with private=true is rejected with 409) and can be performed only by the owner.",
+        "operationId": "updateSinglePublicFilm",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "description": "The updated film that replaces the old one",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FilmInput" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "The film has been updated" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+      "delete": {
+        "tags": ["ApiFilmsPublicFilmId"],
+        "summary": "Delete a public film",
+        "description": "The public film with ID filmId is deleted, together with its reviews. This operation can be performed only by the owner.",
+        "operationId": "deleteSinglePublicFilm",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "204": { "description": "The film has been deleted" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/films/public/{filmId}/reviews": {
+      "parameters": [{ "$ref": "#/components/parameters/filmId" }],
+      "get": {
+        "tags": ["ApiFilmsPublicFilmIdReviews"],
+        "summary": "Retrieve the reviews of a public film",
+        "description": "All the reviews issued or completed for the public film with ID filmId are retrieved. A pagination mechanism is used to limit the size of messages. If the film does not exist or is not public, 404 is returned. This operation does not require authentication.",
+        "operationId": "getFilmReviews",
+        "parameters": [{ "$ref": "#/components/parameters/pageNo" }],
+        "responses": {
+          "200": {
+            "description": "A page of reviews",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Reviews" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "post": {
+        "tags": ["ApiFilmsPublicFilmIdReviews"],
+        "summary": "Issue a film review to one or more users",
+        "description": "The public film with ID filmId is assigned to one or more users for review, and the corresponding reviews are created. The users are specified in the request body. Every element of the body must refer to the filmId of the path (otherwise 400). The operation is atomic: if a user is already invited, 409 is returned and no invitation is created. It can be performed only by the owner, and only on public films (a private film gives 409).",
+        "operationId": "issueFilmReview",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "description": "The review invitations, including the users to whom they are issued",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "$ref": "#/components/schemas/ReviewInvitation" }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The review invitations that have been created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Review" }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    },
+    "/api/films/public/{filmId}/reviews/{reviewerId}": {
+      "parameters": [
+        { "$ref": "#/components/parameters/filmId" },
+        { "$ref": "#/components/parameters/reviewerId" }
+      ],
+      "get": {
+        "tags": ["ApiFilmsPublicFilmIdReviewsReviewerId"],
+        "summary": "Retrieve a review of a public film",
+        "description": "The review of the public film with ID filmId issued to the user with ID reviewerId is retrieved. This operation does not require authentication.",
+        "operationId": "getSingleReview",
+        "responses": {
+          "200": {
+            "description": "The review",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Review" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["ApiFilmsPublicFilmIdReviewsReviewerId"],
+        "summary": "Complete a review",
+        "description": "The review of the film with ID filmId issued to the user with ID reviewerId is completed. The completed property can only be set to true, and reviewDate, rating and review are set. If filmId and reviewerId appear in the body, they must match those of the path (otherwise 400). This operation can be performed only by the invited reviewer, and only if the review is not yet completed (otherwise 409).",
+        "operationId": "updateSingleReview",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "description": "The completed review",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ReviewCompletion" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "The review has been completed" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+      "delete": {
+        "tags": ["ApiFilmsPublicFilmIdReviewsReviewerId"],
+        "summary": "Delete a review invitation",
+        "description": "The review of the film with ID filmId issued to the user with ID reviewerId is deleted. This operation can be performed only by the owner of the film, and only if the review has not yet been completed (otherwise 409).",
+        "operationId": "deleteSingleReview",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "204": { "description": "The review invitation has been deleted" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    },
+    "/api/films/private": {
+      "get": {
+        "tags": ["ApiFilmsPrivate"],
+        "summary": "Retrieve the private films of the logged-in user",
+        "description": "The private films owned by the logged-in user are retrieved. A pagination mechanism is used to limit the size of messages.",
+        "operationId": "getPrivateFilms",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/pageNo" }],
+        "responses": {
+          "200": {
+            "description": "A page of private films",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Films" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/films/private/{filmId}": {
+      "parameters": [{ "$ref": "#/components/parameters/filmId" }],
+      "get": {
+        "tags": ["ApiFilmsPrivateFilmId"],
+        "summary": "Retrieve a private film",
+        "description": "The private film with ID filmId is retrieved. This operation can be performed only by the owner. If the film is not private, 404 is returned.",
+        "operationId": "getSinglePrivateFilm",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "The private film",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Film" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["ApiFilmsPrivateFilmId"],
+        "summary": "Update a private film",
+        "description": "The private film with ID filmId is updated. This operation does not allow changing its visibility (a body with private=false is rejected with 409) and can be performed only by the owner.",
+        "operationId": "updateSinglePrivateFilm",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "description": "The updated film that replaces the old one",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FilmInput" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "The film has been updated" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+      "delete": {
+        "tags": ["ApiFilmsPrivateFilmId"],
+        "summary": "Delete a private film",
+        "description": "The private film with ID filmId is deleted. This operation can be performed only by the owner.",
+        "operationId": "deleteSinglePrivateFilm",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "204": { "description": "The film has been deleted" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    }
+  },
   "components": {
-    "schemas": {},
+    "parameters": {
+      "filmId": {
+        "name": "filmId",
+        "in": "path",
+        "required": true,
+        "description": "ID of the film",
+        "schema": { "type": "integer", "format": "int64", "minimum": 1 }
+      },
+      "reviewerId": {
+        "name": "reviewerId",
+        "in": "path",
+        "required": true,
+        "description": "ID of the user to whom the review has been issued",
+        "schema": { "type": "integer", "format": "int64", "minimum": 1 }
+      },
+      "userId": {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "description": "ID of the user",
+        "schema": { "type": "integer", "format": "int64", "minimum": 1 }
+      },
+      "pageNo": {
+        "name": "pageNo",
+        "in": "query",
+        "required": false,
+        "description": "The number of the requested page (if absent, the first page is returned)",
+        "schema": { "type": "integer", "minimum": 1, "default": 1 }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "The request is not valid: the body does not respect the JSON Schema, or a path/query parameter is not valid, or the parts of the request are inconsistent",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "The user is not authenticated (or the credentials are wrong)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The user is authenticated but is not allowed to perform the operation (e.g., she is not the owner)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "The requested resource does not exist (or it is not visible through this URI)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "The request conflicts with the current state of the resource (e.g., a visibility change, a review already completed, a user already invited)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "NotImplemented": {
+        "description": "The operation is designed but not implemented",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "description": "The body of every error response",
+        "properties": {
+          "error": { "type": "string", "description": "A message describing the error" },
+          "errors": {
+            "type": "array",
+            "description": "Optional details (e.g., the JSON Schema validation errors)",
+            "items": { "type": "object" }
+          }
+        },
+        "required": ["error"]
+      },
+      "FilmManager": {
+        "type": "object",
+        "description": "The entry point of the REST interface: it contains the URIs of the main resources",
+        "properties": {
+          "films": { "type": "string", "description": "URI of the collection of films (to create a new film)" },
+          "privateFilms": { "type": "string", "description": "URI of the private films of the logged-in user" },
+          "publicFilms": { "type": "string", "description": "URI of the public films" },
+          "invitedPublicFilms": { "type": "string", "description": "URI of the public films the logged-in user has been invited to review" },
+          "reviewAssignments": { "type": "string", "description": "URI of the automatic assignment of the reviews" },
+          "users": { "type": "string", "description": "URI of the users" },
+          "usersAuthenticator": { "type": "string", "description": "URI of the authenticator (login and logout)" }
+        },
+        "required": ["films", "privateFilms", "publicFilms", "invitedPublicFilms", "reviewAssignments", "users", "usersAuthenticator"]
+      },
+      "Credentials": {
+        "type": "object",
+        "description": "The credentials used for the login",
+        "properties": {
+          "email": { "type": "string", "format": "email", "description": "Email address of the user" },
+          "password": { "type": "string", "description": "Password of the user" }
+        },
+        "required": ["email", "password"]
+      },
+      "User": {
+        "type": "object",
+        "description": "A user of the Film Manager (the password is never returned)",
+        "properties": {
+          "id": { "type": "integer", "format": "int64", "description": "Unique identifier of the user" },
+          "name": { "type": "string", "description": "Username of the user" },
+          "email": { "type": "string", "format": "email", "description": "Email address of the user" },
+          "self": { "type": "string", "description": "URI of this user" }
+        },
+        "required": ["id", "email"]
+      },
+      "Film": {
+        "type": "object",
+        "description": "A film. The properties watchDate, rating and favorite are present only if private is true.",
+        "properties": {
+          "id": { "type": "integer", "format": "int64", "description": "Unique identifier of the film" },
+          "title": { "type": "string", "minLength": 1, "description": "Title of the film" },
+          "owner": { "type": "integer", "format": "int64", "description": "ID of the user who owns the film" },
+          "private": { "type": "boolean", "description": "true if only the owner can access the film, false if it is public" },
+          "watchDate": { "type": "string", "format": "date", "description": "Date when the owner watched the film (YYYY-MM-DD)" },
+          "rating": { "type": "integer", "minimum": 0, "maximum": 10, "description": "Rating given by the owner" },
+          "favorite": { "type": "boolean", "description": "true if the film is among the favourites of the owner" },
+          "self": { "type": "string", "description": "URI of this film" },
+          "reviews": { "type": "string", "description": "URI of the reviews of this film (public films only)" }
+        },
+        "required": ["id", "title", "owner", "private"]
+      },
+      "FilmInput": {
+        "type": "object",
+        "description": "A film sent by a client: id and owner are not sent, because they are assigned by the service. The properties watchDate, rating and favorite are allowed only if private is true.",
+        "properties": {
+          "title": { "type": "string", "minLength": 1, "description": "Title of the film" },
+          "private": { "type": "boolean", "description": "true if only the owner can access the film, false if it is public" },
+          "watchDate": { "type": "string", "format": "date", "description": "Date when the owner watched the film (YYYY-MM-DD)" },
+          "rating": { "type": "integer", "minimum": 0, "maximum": 10, "description": "Rating given by the owner" },
+          "favorite": { "type": "boolean", "description": "true if the film is among the favourites of the owner" }
+        },
+        "required": ["title", "private"]
+      },
+      "Films": {
+        "type": "object",
+        "description": "A page of films",
+        "properties": {
+          "totalPages": { "type": "integer", "description": "Total number of pages" },
+          "currentPage": { "type": "integer", "description": "Number of this page" },
+          "totalItems": { "type": "integer", "description": "Total number of films" },
+          "films": { "type": "array", "items": { "$ref": "#/components/schemas/Film" } },
+          "self": { "type": "string", "description": "URI of this page" },
+          "next": { "type": "string", "description": "URI of the next page (absent on the last page)" },
+          "prev": { "type": "string", "description": "URI of the previous page (absent on the first page)" }
+        },
+        "required": ["totalPages", "currentPage", "totalItems", "films"]
+      },
+      "Review": {
+        "type": "object",
+        "description": "A review, i.e., a review invitation issued to a user for a public film. The properties reviewDate, rating and review are present only if completed is true.",
+        "properties": {
+          "filmId": { "type": "integer", "format": "int64", "description": "ID of the film" },
+          "reviewerId": { "type": "integer", "format": "int64", "description": "ID of the user who received the invitation" },
+          "completed": { "type": "boolean", "description": "true if the review has been completed" },
+          "reviewDate": { "type": "string", "format": "date", "description": "Date when the review was completed (YYYY-MM-DD)" },
+          "rating": { "type": "integer", "minimum": 0, "maximum": 10, "description": "Rating of the review" },
+          "review": { "type": "string", "maxLength": 1000, "description": "Textual description of the review" },
+          "self": { "type": "string", "description": "URI of this review" },
+          "film": { "type": "string", "description": "URI of the film" },
+          "reviewer": { "type": "string", "description": "URI of the reviewer" }
+        },
+        "required": ["filmId", "reviewerId", "completed"]
+      },
+      "ReviewInvitation": {
+        "type": "object",
+        "description": "A review invitation sent by the owner of a film",
+        "properties": {
+          "filmId": { "type": "integer", "format": "int64", "description": "ID of the film (it must be the filmId of the path)" },
+          "reviewerId": { "type": "integer", "format": "int64", "description": "ID of the user to be invited" }
+        },
+        "required": ["filmId", "reviewerId"]
+      },
+      "ReviewCompletion": {
+        "type": "object",
+        "description": "The data sent by the reviewer to complete a review",
+        "properties": {
+          "filmId": { "type": "integer", "format": "int64", "description": "ID of the film (if present, it must match the path)" },
+          "reviewerId": { "type": "integer", "format": "int64", "description": "ID of the reviewer (if present, it must match the path)" },
+          "completed": { "type": "boolean", "enum": [true], "description": "It can only be set to true" },
+          "reviewDate": { "type": "string", "format": "date", "description": "Date when the review was completed (YYYY-MM-DD)" },
+          "rating": { "type": "integer", "minimum": 0, "maximum": 10, "description": "Rating of the review" },
+          "review": { "type": "string", "maxLength": 1000, "description": "Textual description of the review" }
+        },
+        "required": ["completed", "reviewDate", "rating", "review"]
+      },
+      "Reviews": {
+        "type": "object",
+        "description": "A page of reviews",
+        "properties": {
+          "totalPages": { "type": "integer", "description": "Total number of pages" },
+          "currentPage": { "type": "integer", "description": "Number of this page" },
+          "totalItems": { "type": "integer", "description": "Total number of reviews" },
+          "reviews": { "type": "array", "items": { "$ref": "#/components/schemas/Review" } },
+          "self": { "type": "string", "description": "URI of this page" },
+          "next": { "type": "string", "description": "URI of the next page (absent on the last page)" },
+          "prev": { "type": "string", "description": "URI of the previous page (absent on the first page)" }
+        },
+        "required": ["totalPages", "currentPage", "totalItems", "reviews"]
+      }
+    },
     "securitySchemes": {
       "cookieAuth": {
         "description": "Session cookie used to identify the authenticated user.",
