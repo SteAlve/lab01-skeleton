@@ -18,16 +18,41 @@ module.exports.getFilmManager = function getFilmManager() {
 
 /**
  * These functions can be used on the response of a controller to add the self link or the link to other resources according to the HATEOAS principles.
+ * Each function accepts either a single resource or an array of resources.
  */
 module.exports.addToFilm = function addToFilm(response) {
-  return response;
+  const addLinks = (film) => {
+    if (!film) return film;
+
+    const links = {
+      self: film.private ? `/api/films/${film.id}` : `/api/films/public/${film.id}`
+    };
+    if (!film.private)
+      links.reviews = `/api/films/public/${film.id}/reviews`;
+
+    return { ...film, ...links };
+  };
+
+  return Array.isArray(response) ? response.map(addLinks) : addLinks(response);
 };
 
 module.exports.addToUser = function addToUser(response) {
-  return response;
+  const addLinks = (user) => {
+    if (!user) return user;
+
+    return { ...user, self: `/api/users/${user.id}` };
+  };
+
+  return Array.isArray(response) ? response.map(addLinks) : addLinks(response);
 };
 
 
 module.exports.addToReview = function addToReview(response) {
-  return response;
+  const addLinks = (review) => {
+    if (!review) return review;
+
+    return { ...review, self: `/api/films/public/${review.filmId}/reviews/${review.reviewerId}` };
+  };
+
+  return Array.isArray(response) ? response.map(addLinks) : addLinks(response);
 };

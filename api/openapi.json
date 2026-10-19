@@ -122,6 +122,26 @@
       }
     },
     "/api/films": {
+      "get": {
+        "tags": ["ApiFilms"],
+        "summary": "Retrieve the films created by the logged-in user",
+        "description": "All the films created by the logged-in user, both public and private, are retrieved. A pagination mechanism is used to limit the size of messages.",
+        "operationId": "getOwnFilms",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/pageNo" }],
+        "responses": {
+          "200": {
+            "description": "A page of films",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Films" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
       "post": {
         "tags": ["ApiFilms"],
         "summary": "Create a new film",
@@ -429,27 +449,6 @@
     },
     "/api/films/private/{filmId}": {
       "parameters": [{ "$ref": "#/components/parameters/filmId" }],
-      "get": {
-        "tags": ["ApiFilmsPrivateFilmId"],
-        "summary": "Retrieve a private film",
-        "description": "The private film with ID filmId is retrieved. This operation can be performed only by the owner. If the film is not private, 404 is returned.",
-        "operationId": "getSinglePrivateFilm",
-        "security": [{ "cookieAuth": [] }],
-        "responses": {
-          "200": {
-            "description": "The private film",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/Film" }
-              }
-            }
-          },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "404": { "$ref": "#/components/responses/NotFound" }
-        }
-      },
       "put": {
         "tags": ["ApiFilmsPrivateFilmId"],
         "summary": "Update a private film",
@@ -482,6 +481,30 @@
         "security": [{ "cookieAuth": [] }],
         "responses": {
           "204": { "description": "The film has been deleted" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/films/{filmId}": {
+      "parameters": [{ "$ref": "#/components/parameters/filmId" }],
+      "get": {
+        "tags": ["ApiFilmsFilmId"],
+        "summary": "Retrieve a film",
+        "description": "The film with ID filmId is retrieved if it is public or if the logged-in user is its owner (otherwise 403 is returned). A public film can also be retrieved without authentication through its /api/films/public/{filmId} URI.",
+        "operationId": "getSingleFilm",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "The film",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Film" }
+              }
+            }
+          },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" },
@@ -671,9 +694,7 @@
           "reviewDate": { "type": "string", "format": "date", "description": "Date when the review was completed (YYYY-MM-DD)" },
           "rating": { "type": "integer", "minimum": 0, "maximum": 10, "description": "Rating of the review" },
           "review": { "type": "string", "maxLength": 1000, "description": "Textual description of the review" },
-          "self": { "type": "string", "description": "URI of this review" },
-          "film": { "type": "string", "description": "URI of the film" },
-          "reviewer": { "type": "string", "description": "URI of the reviewer" }
+          "self": { "type": "string", "description": "URI of this review" }
         },
         "required": ["filmId", "reviewerId", "completed"]
       },
