@@ -6,13 +6,13 @@
  */
 module.exports.getFilmManager = function getFilmManager() {
   return {
-    films: '/change/me',
-    privateFilms: '/change/me',
-    publicFilms: '/change/me',
-    invitedPublicFilms: '/change/me',
-    reviewAssignments: '/change/me',
-    users: '/change/me',
-    usersAuthenticator: '/change/me'
+    films: '/api/films',
+    privateFilms: '/api/films/private',
+    publicFilms: '/api/films/public',
+    invitedPublicFilms: '/api/films/public/invited',
+    reviewAssignments: '/api/films/public/assignments',
+    users: '/api/users',
+    usersAuthenticator: '/api/users/authenticator'
   };
 };
 
