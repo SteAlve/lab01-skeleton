@@ -28,6 +28,56 @@ exports.createFilm = function (film, owner) {
 
 
 /**
+ * Retrieve the films created by the logged-in user
+ * All the films (both public and private) created by the logged-in user are retrieved. A pagination mechanism is used to limit the size of messages.
+ *
+ * userId Long The id of the logged-in user
+ * pageNo Integer The id of the requested page (if absent, the first page is returned) (optional)
+ * returns Films
+ **/
+exports.getOwnFilms = function (userId, pageNo) {
+  return new Promise((resolve, reject) => {
+
+    var sql = "SELECT f.id as fid, f.title, f.owner, f.private, f.watchDate, f.rating, f.favorite FROM films f WHERE f.owner = ? ORDER BY f.id";
+    var limits = serviceUtils.getFilmPagination(pageNo);
+    if (limits.length != 0) sql = sql + " LIMIT ?,?";
+    var parameters = [userId];
+    parameters = parameters.concat(limits);
+    db.all(sql, parameters, (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        let films = rows.map((row) => serviceUtils.createFilm(row));
+        resolve(films);
+      }
+    });
+  });
+}
+
+/**
+ * Retrieve the number of films created by an user with ID userId
+ *
+ * Input:
+ * - userId: the userId
+ * Output:
+ * - total number of films (public and private) created by the user
+ *
+ **/
+exports.getOwnFilmsTotal = function (userId) {
+    return new Promise((resolve, reject) => {
+        var sqlNumOfFilms = "SELECT count(*) total FROM films f WHERE owner = ? ";
+        db.get(sqlNumOfFilms, [userId], (err, size) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(size.total);
+            }
+        });
+    });
+}
+
+
+/**
  * Retrieve the private films of the logged-in user
  * The private films of the logged-in user are retrieved. A pagination mechanism is used to limit the size of messages.
  *
@@ -185,7 +235,7 @@ exports.getInvitedFilmsTotal = function (reviewerId) {
  **/
  exports.deleteSinglePublicFilm = function(filmId, owner) {
   return new Promise((resolve, reject) => {
-      const sql1 = "SELECT owner FROM films f WHERE f.id = ?";
+      const sql1 = "SELECT owner, private FROM films f WHERE f.id = ?";
       db.all(sql1, [filmId], (err, rows) => {
           if (err)
               reject(err);
