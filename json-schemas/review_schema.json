@@ -1,0 +1,63 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Review",
+    "description": "A review in the Film Manager platform",
+    "type": "object",
+    "properties": {
+        "filmId": {
+            "type": "integer",
+            "description": "Unique identifier of the film in the Film Manager platform"
+        },
+        "reviewerId": {
+            "type": "integer",
+            "description": "ID of the user who wrote the review"
+        },
+        "completed": {
+            "type": "boolean",
+            "description": "Indicates if the review is completed"
+        },
+        "reviewDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The date when the review was written"
+        },
+        "rating": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10,
+            "description": "Rating of the film (0-10)"
+        },
+        "review": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Text of the review"
+        }
+    },
+    "required": [
+        "filmId",
+        "reviewerId",
+        "completed"
+    ],
+    "if": {
+        "properties": {
+            "completed": {
+                "const": true
+            }
+        }
+    },
+    "then": {
+        "required": [
+            "reviewDate",
+            "rating",
+            "review"
+        ]
+    },
+    "else": {
+        "properties": {
+            "reviewDate": false,
+            "rating": false,
+            "review": false
+        }
+    },
+    "additionalProperties": true
+}
